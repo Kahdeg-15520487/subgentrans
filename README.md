@@ -42,7 +42,7 @@ python subgen.py video1.mp4 video2.avi
 For each video file, the tool will:
 1. Extract audio to a temporary WAV file using FFmpeg
 2. Transcribe the audio using Faster Whisper (base model on CPU)
-3. Translate Japanese text to English using DeepSeek API
+3. Translate Japanese text to English using DeepSeek API (with contextual batch processing for improved accuracy)
 4. Generate an SRT subtitle file with the same base name as the video
 5. Clean up the temporary audio file
 
@@ -81,7 +81,7 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 
 ### API Endpoints
 
-The API processes videos asynchronously and generates English subtitles from Japanese audio using DeepSeek translation.
+The API processes videos asynchronously and generates English subtitles from Japanese audio using DeepSeek translation with contextual batch processing for improved accuracy.
 
 #### POST /generate-subtitles
 
@@ -110,7 +110,15 @@ Check task status.
 {
   "status": "pending|completed|error",
   "srt_path": "path/to/video.srt",
-  "error": "error message if failed"
+  "error": "error message if failed",
+  "timing": {
+    "audio_extraction": 2.34,
+    "transcription": 45.67,
+    "translation": 12.89,
+    "srt_generation": 0.12,
+    "cleanup": 0.01,
+    "total": 61.03
+  }
 }
 ```
 
@@ -133,12 +141,13 @@ curl http://localhost:8000/task/123e4567-e89b-12d3-a456-426614174000
 - SRT files will be created in the same directory as the input videos
 - Example: `video1.mp4` → `video1.srt`
 
-## Notes
+## Translation Features
 
-- Uses the "base" Whisper model for processing (you can change to "small", "medium", etc. in the code)
-- Runs on CPU only (no GPU required)
-- Processing time depends on video length and your CPU
-- API server uses background tasks for asynchronous processing
+- **Contextual Translation**: Each segment includes the previous 3 segments as context for more accurate translations
+- **Batch Processing**: Segments are processed in batches of 5 for better API efficiency (configurable)
+- **Fallback Handling**: Gracefully falls back to original Japanese text if translation fails
+- **Cost Optimization**: Reduced API calls through batching
+- **Performance Monitoring**: Detailed timing information for each processing stage
 
 ## Local Model Setup (Optional)
 

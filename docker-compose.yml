@@ -1,10 +1,9 @@
-version: '3.8'
-
 services:
   subgen-api:
     build: .
     ports:
-      - "8000:8000"
+      - "8002:8000"
     volumes:
       - ./videos:/app/videos
+      - ./models:/app/models
     restart: unless-stopped

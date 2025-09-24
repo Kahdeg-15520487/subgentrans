@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import time
 from faster_whisper import WhisperModel
 
 def extract_audio(video_path, audio_path):
@@ -89,14 +90,30 @@ if __name__ == "__main__":
         srt_path = base_name + ".srt"
 
         try:
+            total_start = time.time()
             print(f"Processing {video_path}...")
+
+            # Extract audio
+            audio_start = time.time()
             print("Extracting audio...")
             extract_audio(video_path, audio_path)
+            audio_time = time.time() - audio_start
+            print(f"Audio extraction: {audio_time:.2f}s")
+
+            # Transcribe
+            transcribe_start = time.time()
             print("Transcribing audio (Japanese)...")
             text, segments = transcribe_audio(audio_path)
+            transcribe_time = time.time() - transcribe_start
+            print(f"Transcription: {transcribe_time:.2f}s")
+
             print("Generating subtitles...")
             generate_srt(segments, srt_path)
+
+            total_time = time.time() - total_start
             print(f"Subtitles saved to '{srt_path}'")
+            print(f"Total processing time: {total_time:.2f}s")
+
         except Exception as e:
             print(f"Error processing '{video_path}': {str(e)}")
         finally:
