@@ -2,3 +2,4 @@ faster-whisper
 fastapi
 uvicorn[standard]
 pydantic
+requests

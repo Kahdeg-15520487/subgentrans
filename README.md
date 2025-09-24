@@ -1,11 +1,12 @@
 # Subtitle Generator
 
-A Python tool that uses OpenAI's Whisper (CPU-only) to generate subtitles for video files.
+A Python tool that uses Faster Whisper (CTranslate2 implementation) to generate subtitles for video files, with automatic translation to English using DeepSeek API.
 
 ## Requirements
 
 - Python 3.7+
 - FFmpeg (for audio extraction)
+- DeepSeek API key (for translation to English)
 
 ## Installation
 
@@ -17,6 +18,16 @@ A Python tool that uses OpenAI's Whisper (CPU-only) to generate subtitles for vi
 2. Install FFmpeg:
    - Download from https://ffmpeg.org/download.html
    - Add to your system PATH
+
+3. Set up DeepSeek API key:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your DeepSeek API key
+   export DEEPSEEK_API_KEY="your-api-key-here"
+   ```
+   Get your API key from [DeepSeek Platform](https://platform.deepseek.com/)
+
+   **Note:** If no API key is provided, the tool will generate Japanese subtitles without translation.
 
 ## Usage
 
@@ -30,9 +41,10 @@ python subgen.py video1.mp4 video2.avi
 
 For each video file, the tool will:
 1. Extract audio to a temporary WAV file using FFmpeg
-2. Transcribe the audio using OpenAI Whisper (base model on CPU)
-3. Generate an SRT subtitle file with the same base name as the video
-4. Clean up the temporary audio file
+2. Transcribe the audio using Faster Whisper (base model on CPU)
+3. Translate Japanese text to English using DeepSeek API
+4. Generate an SRT subtitle file with the same base name as the video
+5. Clean up the temporary audio file
 
 ## API Server
 
@@ -68,6 +80,8 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
 ### API Endpoints
+
+The API processes videos asynchronously and generates English subtitles from Japanese audio using DeepSeek translation.
 
 #### POST /generate-subtitles
 

@@ -2,6 +2,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 import uuid
 import os
+import requests
 from subgen import extract_audio, transcribe_audio, generate_srt
 
 app = FastAPI(
@@ -26,6 +27,64 @@ class TaskResponse(BaseModel):
     error: str = None
 
 
+def translate_text(text: str, target_lang: str = "en") -> str:
+    """Translate text using DeepSeek API."""
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise ValueError("DEEPSEEK_API_KEY environment variable not set")
+
+    url = "https://api.deepseek.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    prompt = f"Translate the following Japanese text to English. Only return the translation, no explanations:\n\n{text}"
+
+    data = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.1
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+
+    result = response.json()
+    translated_text = result["choices"][0]["message"]["content"].strip()
+
+    return translated_text
+
+
+def translate_segments(segments, target_lang: str = "en"):
+    """Translate all segments to target language."""
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        print("Warning: DEEPSEEK_API_KEY not set, skipping translation")
+        return segments  # Return original segments if no API key
+
+    translated_segments = []
+    for segment in segments:
+        try:
+            translated_text = translate_text(segment.text, target_lang)
+            # Create a new segment-like object with translated text
+            translated_segment = type('TranslatedSegment', (), {
+                'start': segment.start,
+                'end': segment.end,
+                'text': translated_text
+            })()
+            translated_segments.append(translated_segment)
+        except Exception as e:
+            print(f"Translation failed for segment: {e}")
+            # Fall back to original text if translation fails
+            translated_segments.append(segment)
+
+    return translated_segments
+
+
 def process_video(task_id: str, video_path: str):
     """Background task to process video and generate subtitles."""
     try:
@@ -47,10 +106,12 @@ def process_video(task_id: str, video_path: str):
         # Transcribe
         text, segments = transcribe_audio(audio_path)
 
-        # Generate SRT
-        generate_srt(segments, srt_path)
+        # Translate segments to English
+        print("Translating to English...")
+        translated_segments = translate_segments(segments, "en")
 
-        # Cleanup
+        # Generate SRT
+        generate_srt(translated_segments, srt_path)        # Cleanup
         os.remove(audio_path)
 
         tasks[task_id] = {"status": "completed", "srt_path": srt_path}
