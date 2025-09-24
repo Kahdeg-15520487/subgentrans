@@ -1,4 +1,4 @@
-openai-whisper
+faster-whisper
 fastapi
 uvicorn[standard]
 pydantic

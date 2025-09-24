@@ -125,3 +125,31 @@ curl http://localhost:8000/task/123e4567-e89b-12d3-a456-426614174000
 - Runs on CPU only (no GPU required)
 - Processing time depends on video length and your CPU
 - API server uses background tasks for asynchronous processing
+
+## Local Model Setup (Optional)
+
+For faster startup and offline usage, you can download the Kotoba-Whisper model locally:
+
+### Download Kotoba-Whisper Model
+
+```bash
+# Option 1: Use the provided script
+python download_model.py
+
+# Option 2: Manual download with huggingface-cli
+pip install huggingface_hub
+huggingface-cli download kotoba-tech/kotoba-whisper-v2.0-faster --local-dir models/kotoba-whisper-v2.0-faster --local-dir-use-symlinks False
+```
+
+### Alternative: Manual Download
+
+You can also manually download the model files from the [Hugging Face model page](https://huggingface.co/kotoba-tech/kotoba-whisper-v2.0-faster) and place them in `models/kotoba-whisper-v2.0-faster/`.
+
+### Benefits of Local Models
+
+- **Faster startup**: No download time on first run
+- **Offline usage**: Works without internet connection
+- **Reliability**: No dependency on external downloads
+- **Version control**: Keep specific model versions
+
+If the local model folder `models/kotoba-whisper-v2.0-faster` exists, the application will automatically use it. Otherwise, it will download the model as before.

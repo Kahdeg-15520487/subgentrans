@@ -13,7 +13,7 @@ app = FastAPI(
 tasks = {}
 
 # Mounted directory for videos
-MOUNT_DIR = "/app/videos"
+MOUNT_DIR = "videos"
 
 
 class GenerateRequest(BaseModel):

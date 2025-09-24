@@ -19,10 +19,22 @@ def extract_audio(video_path, audio_path):
 
 def transcribe_audio(audio_path):
     """Transcribe audio using Kotoba-Whisper v2.0 Faster on CPU."""
+    # Try to load from local folder first, fall back to download
+    local_model_path = os.path.join(os.path.dirname(__file__), "models", "kotoba-whisper-v2.0-faster")
+    
+    if os.path.exists(local_model_path):
+        model_path = local_model_path
+        print(f"Loading model from local path: {model_path}")
+    else:
+        model_path = "kotoba-tech/kotoba-whisper-v2.0-faster"
+        print(f"Downloading model: {model_path}")
+    
     # Use the kotoba-whisper model
-    model = WhisperModel("kotoba-tech/kotoba-whisper-v2.0-faster",
+    model = WhisperModel(model_path,
                          device="cpu",
                          compute_type="int8")  # or "float16" if int8 gives too many errors
+    
+    print("loaded model, starting transcription...")
 
     # Use Japanese, chunk_length to avoid huge memory usage for long files
     segments, info = model.transcribe(
@@ -32,6 +44,7 @@ def transcribe_audio(audio_path):
         chunk_length=15,  # seconds; adjust based on memory / latency
         condition_on_previous_text=False
     )
+    print("transcription done")
     segment_list = list(segments)
     # Optionally: combine text if needed
     text = " ".join([seg.text for seg in segment_list])
@@ -40,22 +53,25 @@ def transcribe_audio(audio_path):
 def generate_srt(segments, output_path):
     """Generate SRT subtitle file from transcription segments."""
     with open(output_path, 'w', encoding='utf-8') as f:
-        for i, segment in enumerate(segments, 1):
+        subtitle_number = 1
+        for segment in segments:
             start = segment.start
             end = segment.end
             text = segment.text.strip()
             if not text:
                 continue
-            f.write(f"{i}\n")
+            f.write(f"{subtitle_number}\n")
             f.write(f"{format_time(start)} --> {format_time(end)}\n")
             f.write(f"{text}\n\n")
+            subtitle_number += 1
 
 def format_time(seconds: float) -> str:
     """Format seconds to SRT time format (HH:MM:SS,mmm)."""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    millis = int((seconds - int(seconds)) * 1000)
+    total_ms = int(seconds * 1000)
+    hours = total_ms // 3600000
+    minutes = (total_ms % 3600000) // 60000
+    secs = (total_ms % 60000) // 1000
+    millis = total_ms % 1000
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
 
 if __name__ == "__main__":
