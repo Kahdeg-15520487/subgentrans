@@ -46,7 +46,12 @@ def transcribe_audio(audio_path):
         condition_on_previous_text=False
     )
     print("transcription done")
-    segment_list = list(segments)
+    segment_list = []
+    for i, segment in enumerate(segments, 1):
+        segment_list.append(segment)
+        if i % 50 == 0:  # Print progress every 50 segments
+            print(f"Collected {i} segments...")
+    print(f"Total segments collected: {len(segment_list)}")
     # Optionally: combine text if needed
     text = " ".join([seg.text for seg in segment_list])
     return text, segment_list
