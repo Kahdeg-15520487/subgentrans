@@ -1,9 +1,11 @@
 services:
   subgen-api:
-    build: .
+    image: ghcr.io/kahdeg-15520487/subgentrans:latest
     ports:
       - "8002:8000"
     volumes:
-      - ./videos:/app/videos
-      - ./models:/app/models
+      - ${VIDEOS_PATH:-./videos}:/app/videos
+      - ${MODELS_PATH:-./models}:/app/models
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     restart: unless-stopped
